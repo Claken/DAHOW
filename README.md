@@ -27,7 +27,7 @@ Ce projet s'inscrit dans une démarche d’optimisation des processus de traitem
 
 ```mermaid
 graph TD;
-    A[🖥 Utilisateur (Streamlit)] -->|Upload d'un fichier CSV| B[AWS S3 (Raw Data)];
+    A[Utilisateur (Streamlit)] -->|Upload d'un fichier CSV| B[AWS S3 (Raw Data)];
     B -->|Stockage du fichier uploadé| C[AWS Glue - LAMBDA #1];
     C -->|Analyse du fichier S3 <br> Extraction des schémas <br> Mise à jour du catalogue Glue| D[Amazon Redshift (DB)];
     D -->|Création de la base de données <br> Stockage des données| E[Détection d'Anomalies (LAMBDA #2)];
