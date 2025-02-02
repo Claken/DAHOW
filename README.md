@@ -34,6 +34,4 @@ graph TD;
     E -->|Génération SQL| F["AWS Bedrock - Mistral Large (LAMBDA #3) \n - Génération de requêtes SQL pour vérifier la validité des données"];
     F -->|Exécution| G["Exécution des Requêtes SQL (Lambda) \n - Interrogation de la DB Redshift \n - Extraction des résultats"];
     G -->|Affichage| H["Reporting & Audit \n - Affichage des résultats dans Quicksight"];
-
-
 ```
