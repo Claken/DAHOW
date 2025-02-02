@@ -1,0 +1,176 @@
+Transform: AWS::Serverless-2016-10-31
+Resources:
+StateMachine:
+Type: AWS::Serverless::StateMachine
+Properties:
+Definition:
+StartAt: test_bucket_add
+States:
+test_bucket_add:
+Type: Task
+Resource: arn:aws:states:::lambda:invoke
+Parameters:
+Payload.$: $
+FunctionName: arn:aws:lambda:us-west-2:135808932865:function:test_bucket_add
+Next: send_to_mistral
+send_to_mistral:
+Type: Task
+Resource: arn:aws:states:::lambda:invoke
+OutputPath: $.Payload
+Parameters:
+Payload.$: $
+FunctionName: arn:aws:lambda:us-west-2:135808932865:function:send_rule_to_mistral
+Retry:
+- ErrorEquals:
+- Lambda.ServiceException
+- Lambda.AWSLambdaException
+- Lambda.SdkClientException
+- Lambda.TooManyRequestsException
+IntervalSeconds: 1
+MaxAttempts: 3
+BackoffRate: 2
+JitterStrategy: FULL
+Next: prompt builder
+prompt builder:
+Type: Task
+Resource: arn:aws:states:::lambda:invoke
+OutputPath: $.Payload
+Parameters:
+Payload.$: $
+FunctionName: arn:aws:lambda:us-west-2:135808932865:function:Prompt_Builder
+Retry:
+- ErrorEquals:
+- Lambda.ServiceException
+- Lambda.AWSLambdaException
+- Lambda.SdkClientException
+- Lambda.TooManyRequestsException
+IntervalSeconds: 1
+MaxAttempts: 3
+BackoffRate: 2
+JitterStrategy: FULL
+Next: send_to_LLM
+send_to_LLM:
+Type: Task
+Resource: arn:aws:states:::lambda:invoke
+OutputPath: $.Payload
+Parameters:
+Payload.$: $
+FunctionName: arn:aws:lambda:us-west-2:135808932865:function:Send_to_LLM
+Retry:
+- ErrorEquals:
+- Lambda.ServiceException
+- Lambda.AWSLambdaException
+- Lambda.SdkClientException
+- Lambda.TooManyRequestsException
+IntervalSeconds: 1
+MaxAttempts: 3
+BackoffRate: 2
+JitterStrategy: FULL
+End: true
+Comment: Step function process and send prompts to LLM to generate SQL Query
+Logging:
+Level: ALL
+IncludeExecutionData: true
+Destinations:
+- CloudWatchLogsLogGroup:
+LogGroupArn: !GetAtt StateMachineLogGroup.Arn
+Policies:
+- AWSXrayWriteOnlyAccess
+- Statement:
+- Effect: Allow
+Action:
+- logs:CreateLogDelivery
+- logs:GetLogDelivery
+- logs:UpdateLogDelivery
+- logs:DeleteLogDelivery
+- logs:ListLogDeliveries
+- logs:PutResourcePolicy
+- logs:DescribeResourcePolicies
+- logs:DescribeLogGroups
+Resource: ''
+Tracing:
+Enabled: true
+Type: STANDARD
+DefinitionSubstitutions:
+LambdaFunction1: !Ref AWS::NoValue
+StateMachineLogGroup:
+Type: AWS::Logs::LogGroup
+Properties:
+LogGroupName: !Sub
+- /aws/vendedlogs/states/${AWS::StackName}-${ResourceId}-Logs
+- ResourceId: StateMachine
+veoliadata:
+Type: AWS::S3::Bucket
+Properties:
+BucketName: !Sub ${AWS::StackName}-veoliadat-${AWS::AccountId}
+BucketEncryption:
+ServerSideEncryptionConfiguration:
+- ServerSideEncryptionByDefault:
+SSEAlgorithm: aws:kms
+KMSMasterKeyID: alias/aws/s3
+PublicAccessBlockConfiguration:
+IgnorePublicAcls: true
+RestrictPublicBuckets: true
+veoliadataBucketPolicy:
+Type: AWS::S3::BucketPolicy
+Properties:
+Bucket: !Ref veoliadata
+PolicyDocument:
+Id: RequireEncryptionInTransit
+Version: '2012-10-17'
+Statement:
+- Principal: ''
+Action: ''
+Effect: Deny
+Resource:
+- !GetAtt veoliadata.Arn
+- !Sub ${veoliadata.Arn}/
+Condition:
+Bool:
+aws:SecureTransport: 'false'
+defaultworkgroup:
+Type: AWS::RedshiftServerless::Workgroup
+Properties:
+WorkgroupName: <String>
+Crawler:
+Type: AWS::Glue::Crawler
+Properties:
+Targets: {}
+Role: <String>
+Database:
+Type: AWS::Glue::Database
+Properties:
+DatabaseInput: {}
+CatalogId: <String>
+Schedule:
+Type: AWS::Scheduler::Schedule
+Properties:
+ScheduleExpression: rate(1 hour)
+FlexibleTimeWindow:
+Mode: 'OFF'
+Target:
+Arn: !Ref StateMachine
+RoleArn: !GetAtt ScheduleToStateMachineRole.Arn
+ScheduleToStateMachineRole:
+Type: AWS::IAM::Role
+Properties:
+AssumeRolePolicyDocument:
+Version: '2012-10-17'
+Statement:
+Effect: Allow
+Principal:
+Service: !Sub scheduler.${AWS::URLSuffix}
+Action: sts:AssumeRole
+Condition:
+ArnLike:
+aws:SourceArn: !Sub
+- arn:${AWS::Partition}:scheduler:${AWS::Region}:${AWS::AccountId}:schedule//${AWS::StackName}-${ResourceId}-
+- ResourceId: Schedule
+Policies:
+- PolicyName: StartExecutionPolicy
+PolicyDocument:
+Version: '2012-10-17'
+Statement:
+- Effect: Allow
+Action: states:StartExecution
+Resource: !Ref StateMachine
