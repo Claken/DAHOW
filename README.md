@@ -25,6 +25,7 @@ Ce projet s'inscrit dans une démarche d’optimisation des processus de traitem
 
 ## Architecture
 
+```mermaid
 graph TD;
     A[🖥 Utilisateur (Streamlit)] -->|Upload d'un fichier CSV| B[☁ AWS S3 (Raw Data)];
     B -->|Stockage du fichier uploadé| C[🏗 AWS Glue - LAMBDA #1];
