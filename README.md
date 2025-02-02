@@ -35,3 +35,4 @@ graph TD;
     F -->|Génération de requêtes SQL <br> pour vérifier la validité des données| G[🔍 Exécution des Requêtes SQL (Lambda)];
     G -->|Interrogation de la DB Redshift <br> Extraction des résultats| H[📊 Reporting & Audit];
     H -->|Affichage des résultats dans Quicksight| H;
+```
