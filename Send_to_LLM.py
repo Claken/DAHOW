@@ -36,9 +36,9 @@ def lambda_handler(event, context):
     try:
         # Parse input with proper JSON handling
         body_data = json.loads(event["body"]) if isinstance(event.get("body"), str) else event.get("body", {})
-        
+
         responses = []
-        
+
         # Regex pattern to identify complete schema/rule pairs with XML tags
         xml_pattern = re.compile(
             r"(<SCHEMA>.*?</SCHEMA>\s*<RULE>.*?</RULE>)", 
@@ -51,15 +51,15 @@ def lambda_handler(event, context):
                 for item in items:
                     # Decode Unicode escapes first
                     decoded_item = bytes(item, "utf-8").decode("unicode_escape")
-                    
+
                     # Find all complete XML-tagged pairs
                     matches = xml_pattern.findall(decoded_item)
-                    
+
                     for match in matches:
                         # Preserve XML tags in the prompt
                         prompt = match.strip()
                         print("Processing XML prompt:", prompt)
-                        
+
                         # Call Bedrock and store response
                         bedrock_response = call_bedrock_api(prompt)
                         responses.append(bedrock_response)
