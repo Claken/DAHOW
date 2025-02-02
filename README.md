@@ -25,58 +25,12 @@ Ce projet s'inscrit dans une démarche d’optimisation des processus de traitem
 
 ## Architecture
 
-```
-                     +-------------------------------------------------+
-                     |   🖥 Utilisateur (Streamlit)                    |
-                     |   Upload d'un fichier CSV                      |
-                     +-------------------------------------------------+
-                                       |
-                                       v
-                     +-------------------------------------------------+
-                     |   ☁ AWS S3 (Raw Data)                           |
-                     |   Stockage du fichier uploadé                   |
-                     +-------------------------------------------------+
-                                       |
-                                       v
-                     +-------------------------------------------------+
-                     |   🏗 AWS Glue - LAMBDA #1                        |
-                     |   - Analyse du fichier S3                       |
-                     |   - Extraction des schémas                      |
-                     |   - Mise à jour du catalogue Glue               |
-                     +-------------------------------------------------+
-                                       |
-                                       v
-                     +-------------------------------------------------+
-                     |   🏛 Amazon Redshift (DB)                        |
-                     |   - Création de la base de données              |
-                     |   - Stockage des données                        |
-                     +-------------------------------------------------+
-                                       |
-                                       v
-                     +-------------------------------------------------+
-                     |   🧐 Détection d'Anomalies (LAMBDA #2)           |
-                     |   - Récupération des colonnes Redshift          |
-                     |   - Chargement des règles depuis S3             |
-                     |   - Génération du prompt pour Bedrock           |
-                     +-------------------------------------------------+
-                                       |
-                                       v
-                     +-------------------------------------------------+
-                     |   🤖 AWS Bedrock - Mistral Large (LAMBDA #3)    |
-                     |   - Génération de requêtes SQL pour vérifier la |
-                     |     validité des données                        |
-                     +-------------------------------------------------+
-                                       |
-                                       v
-                     +-------------------------------------------------+
-                     |   🔍 Exécution des Requêtes SQL (Lambda)        |
-                     |   - Interrogation de la DB Redshift             |
-                     |   - Extraction des résultats                    |
-                     +-------------------------------------------------+
-                                       |
-                                       v
-                     +-------------------------------------------------+
-                     |   📊 Reporting & Audit                          |
-                     |   - Affichage des résultats dans Quicksight     |
-                     +-------------------------------------------------+
-```
+graph TD;
+    A[🖥 Utilisateur (Streamlit)] -->|Upload d'un fichier CSV| B[☁ AWS S3 (Raw Data)];
+    B -->|Stockage du fichier uploadé| C[🏗 AWS Glue - LAMBDA #1];
+    C -->|Analyse du fichier S3 <br> Extraction des schémas <br> Mise à jour du catalogue Glue| D[🏛 Amazon Redshift (DB)];
+    D -->|Création de la base de données <br> Stockage des données| E[🧐 Détection d'Anomalies (LAMBDA #2)];
+    E -->|Récupération des colonnes Redshift <br> Chargement des règles depuis S3 <br> Génération du prompt pour Bedrock| F[🤖 AWS Bedrock - Mistral Large (LAMBDA #3)];
+    F -->|Génération de requêtes SQL <br> pour vérifier la validité des données| G[🔍 Exécution des Requêtes SQL (Lambda)];
+    G -->|Interrogation de la DB Redshift <br> Extraction des résultats| H[📊 Reporting & Audit];
+    H -->|Affichage des résultats dans Quicksight| H;
