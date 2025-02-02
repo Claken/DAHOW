@@ -1,7 +1,9 @@
 import boto3
 import json
+import re
 
 def call_bedrock_api(prompt):
+    # Keep existing bedrock call implementation
     client = boto3.client("bedrock-runtime")
     response = client.invoke_model(
         modelId="anthropic.claude-3-5-sonnet-20241022-v2:0",
@@ -32,45 +34,43 @@ def call_bedrock_api(prompt):
 def lambda_handler(event, context):
     print("Event received:", event)
     try:
-        # Parse the event body
-        if "body" in event and isinstance(event["body"], str):
-            body_data = json.loads(event["body"])
-        elif isinstance(event["body"], (dict, list)):
-            body_data = event["body"]
-        else:
-            return {
-                'statusCode': 400,
-                'body': 'Invalid event format. Expected a JSON object or string inside "body".'
-            }
-        
-        # Ensure we always work with a list.
-        if not isinstance(body_data, list):
-            body_data = [body_data]
+        # Parse input with proper JSON handling
+        body_data = json.loads(event["body"]) if isinstance(event.get("body"), str) else event.get("body", {})
         
         responses = []
-        # Loop over each top-level element
-        for element in body_data:
-            print("Processing element:", element)
-            prompt = (
-                "You are an expert SQL Query builder: Create an SQL Query with the following:\n" +
-                str(element)
-            )
-            print("Constructed prompt:", prompt)
-            bedrock_response = call_bedrock_api(prompt)
-            responses.append(bedrock_response)
         
+        # Regex pattern to identify complete schema/rule pairs with XML tags
+        xml_pattern = re.compile(
+            r"(<SCHEMA>.*?</SCHEMA>\s*<RULE>.*?</RULE>)", 
+            re.DOTALL
+        )
+
+        if isinstance(body_data, dict):
+            for category in ['abonnement', 'conso', 'facture']:
+                items = body_data.get(category, [])
+                for item in items:
+                    # Decode Unicode escapes first
+                    decoded_item = bytes(item, "utf-8").decode("unicode_escape")
+                    
+                    # Find all complete XML-tagged pairs
+                    matches = xml_pattern.findall(decoded_item)
+                    
+                    for match in matches:
+                        # Preserve XML tags in the prompt
+                        prompt = match.strip()
+                        print("Processing XML prompt:", prompt)
+                        
+                        # Call Bedrock and store response
+                        bedrock_response = call_bedrock_api(prompt)
+                        responses.append(bedrock_response)
+
         return {
             'statusCode': 200,
-            'body': json.dumps({'bedrock_responses': responses})
+            'body': json.dumps({'bedrock_responses': responses}, ensure_ascii=False)
         }
 
-    except json.JSONDecodeError:
-        return {
-            'statusCode': 400,
-            'body': 'Invalid JSON format in the event.'
-        }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': f"An unexpected error occurred: {str(e)}"
+            'body': f"Error: {str(e)}"
         }
