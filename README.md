@@ -22,3 +22,61 @@ La solution comprend :
 Ce projet s'inscrit dans une démarche d’optimisation des processus de traitement des données pour assurer une meilleure prise de décision au sein de Veolia Eau France.
 
 ---
+
+## Architecture
+
+```
+                     +-------------------------------------------------+
+                     |   🖥 Utilisateur (Streamlit)                    |
+                     |   Upload d'un fichier CSV                      |
+                     +-------------------------------------------------+
+                                       |
+                                       v
+                     +-------------------------------------------------+
+                     |   ☁ AWS S3 (Raw Data)                           |
+                     |   Stockage du fichier uploadé                   |
+                     +-------------------------------------------------+
+                                       |
+                                       v
+                     +-------------------------------------------------+
+                     |   🏗 AWS Glue - LAMBDA #1                        |
+                     |   - Analyse du fichier S3                       |
+                     |   - Extraction des schémas                      |
+                     |   - Mise à jour du catalogue Glue               |
+                     +-------------------------------------------------+
+                                       |
+                                       v
+                     +-------------------------------------------------+
+                     |   🏛 Amazon Redshift (DB)                        |
+                     |   - Création de la base de données              |
+                     |   - Stockage des données                        |
+                     +-------------------------------------------------+
+                                       |
+                                       v
+                     +-------------------------------------------------+
+                     |   🧐 Détection d'Anomalies (LAMBDA #2)           |
+                     |   - Récupération des colonnes Redshift          |
+                     |   - Chargement des règles depuis S3             |
+                     |   - Génération du prompt pour Bedrock           |
+                     +-------------------------------------------------+
+                                       |
+                                       v
+                     +-------------------------------------------------+
+                     |   🤖 AWS Bedrock - Mistral Large (LAMBDA #3)    |
+                     |   - Génération de requêtes SQL pour vérifier la |
+                     |     validité des données                        |
+                     +-------------------------------------------------+
+                                       |
+                                       v
+                     +-------------------------------------------------+
+                     |   🔍 Exécution des Requêtes SQL (Lambda)        |
+                     |   - Interrogation de la DB Redshift             |
+                     |   - Extraction des résultats                    |
+                     +-------------------------------------------------+
+                                       |
+                                       v
+                     +-------------------------------------------------+
+                     |   📊 Reporting & Audit                          |
+                     |   - Affichage des résultats dans Quicksight     |
+                     +-------------------------------------------------+
+```
