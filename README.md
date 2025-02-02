@@ -25,14 +25,14 @@ Ce projet s'inscrit dans une démarche d’optimisation des processus de traitem
 
 ## Architecture
 
-```mermaid
+```
 graph TD;
-    A[Utilisateur (Streamlit)] -->|Upload d'un fichier CSV| B[AWS S3 (Raw Data)];
-    B -->|Stockage du fichier uploadé| C[AWS Glue - LAMBDA #1];
-    C -->|Analyse du fichier S3 <br> Extraction des schémas <br> Mise à jour du catalogue Glue| D[Amazon Redshift (DB)];
-    D -->|Création de la base de données <br> Stockage des données| E[Détection d'Anomalies (LAMBDA #2)];
-    E -->|Récupération des colonnes Redshift <br> Chargement des règles depuis S3 <br> Génération du prompt pour Bedrock| F[AWS Bedrock - Mistral Large (LAMBDA #3)];
-    F -->|Génération de requêtes SQL <br> pour vérifier la validité des données| G[Exécution des Requêtes SQL (Lambda)];
-    G -->|Interrogation de la DB Redshift <br> Extraction des résultats| H[Reporting & Audit];
-    H -->|Affichage des résultats dans Quicksight| H;
+    A[🖥 Utilisateur (Streamlit) <br> Upload d'un fichier CSV] -->|Upload| B[☁ AWS S3 (Raw Data) <br> Stockage du fichier uploadé];
+    B -->|Analyse| C[🏗 AWS Glue - LAMBDA #1 <br> - Analyse du fichier S3 <br> - Extraction des schémas <br> - Mise à jour du catalogue Glue];
+    C -->|Création| D[🏛 Amazon Redshift (DB) <br> - Création de la base de données <br> - Stockage des données];
+    D -->|Vérification| E[🧐 Détection d'Anomalies (LAMBDA #2) <br> - Récupération des colonnes Redshift <br> - Chargement des règles depuis S3 <br> - Génération du prompt pour Bedrock];
+    E -->|Génération SQL| F[🤖 AWS Bedrock - Mistral Large (LAMBDA #3) <br> - Génération de requêtes SQL pour vérifier la validité des données];
+    F -->|Exécution| G[🔍 Exécution des Requêtes SQL (Lambda) <br> - Interrogation de la DB Redshift <br> - Extraction des résultats];
+    G -->|Affichage| H[📊 Reporting & Audit <br> - Affichage des résultats dans Quicksight];
+
 ```
