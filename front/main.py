@@ -4,6 +4,7 @@ import streamlit as st
 import boto3
 from botocore.exceptions import BotoCoreError, NoCredentialsError
 import base64
+import pandas as pd
 
 def load_env_file(file_path=".env"):
     """
@@ -12,7 +13,6 @@ def load_env_file(file_path=".env"):
     try:
         with open(file_path, "r") as env_file:
             for line in env_file:
-                # Remove whitespace and ignore comments and blank lines
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
@@ -29,7 +29,7 @@ load_env_file()
 # Retrieve AWS credentials from environment variables
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION", "us-east-1")  # Defaults to us-east-1 if not provided
+AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
 
 def show_pdf(file_obj):
     """
@@ -44,6 +44,14 @@ def show_pdf(file_obj):
     '''
     st.markdown(pdf_display, unsafe_allow_html=True)
 
+def show_csv(file_obj):
+    """
+    Display the CSV file as a DataFrame in Streamlit.
+    """
+    file_obj.seek(0)
+    df = pd.read_csv(file_obj)
+    st.dataframe(df)
+
 def upload_to_s3(file_obj, bucket_name, s3_file_name):
     """
     Upload a file-like object to S3 using boto3.
@@ -55,7 +63,6 @@ def upload_to_s3(file_obj, bucket_name, s3_file_name):
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY
     )
     try:
-        # Ensure the file pointer is at the beginning
         file_obj.seek(0)
         s3.upload_fileobj(file_obj, bucket_name, s3_file_name)
         st.success("Upload to S3 successful!")
@@ -74,19 +81,15 @@ def call_lambda_function():
         aws_access_key_id=AWS_ACCESS_KEY_ID,
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY
     )
-    
-    # Prepare a payload if needed. For this example, we'll send an empty JSON.
-    payload = {}  # Modify payload as needed.
+    payload = {}
     try:
         response = lambda_client.invoke(
-            FunctionName='myFn',  # Name of your Lambda function
+            FunctionName='myFn',
             InvocationType='RequestResponse',
             Payload=json.dumps(payload)
         )
-        # Read and decode the response payload
         response_payload = response['Payload'].read().decode('utf-8')
         try:
-            # Try to parse the response as JSON
             result = json.loads(response_payload)
         except json.JSONDecodeError:
             result = response_payload
@@ -97,31 +100,25 @@ def call_lambda_function():
         return None
 
 # --- Streamlit App Layout ---
+st.title("File Uploader & Lambda Caller with Streamlit")
 
-st.title("PDF Uploader & Lambda Caller with Streamlit")
-
-# File uploader widget (accepts only PDF files)
-uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+# File uploader widget (accepts both PDF and CSV files)
+uploaded_file = st.file_uploader("Upload a file (PDF or CSV)", type=["pdf", "csv"])
 
 if uploaded_file is not None:
     st.write("Filename:", uploaded_file.name)
     
-    # Display the PDF in the app
-    show_pdf(uploaded_file)
+    if uploaded_file.name.endswith(".pdf"):
+        show_pdf(uploaded_file)
+    elif uploaded_file.name.endswith(".csv"):
+        show_csv(uploaded_file)
     
     # S3 configuration
     bucket_name = "veolia-data"  # Replace with your actual bucket name
-    s3_file_name = uploaded_file.name    # You can customize the S3 object key as needed
+    s3_file_name = uploaded_file.name    
 
     # Button to trigger the S3 upload
     if st.button("Upload to S3"):
         success = upload_to_s3(uploaded_file, bucket_name, s3_file_name)
         if success:
             st.write(f"File uploaded to s3://{bucket_name}/{s3_file_name}")
-
-# Button to call the Lambda function "myFn"
-if st.button("Call myFn Lambda Function"):
-    lambda_result = call_lambda_function()
-    if lambda_result is not None:
-        st.write("Lambda function result:")
-        st.json(lambda_result)
