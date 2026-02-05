@@ -4,7 +4,7 @@ Welcome to the **DAHOW** project repository, presented during the **H-GENAI** **
 
 ## Presentation Overview
 
-You can view the full PDF presentation [here](./assets/DAHOW.pdf).
+You can view the full PDF presentation [here](https://github.com/Claken/DAHOW/blob/main/DAHOW.pdf).
 
 ---
 
