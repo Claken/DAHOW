@@ -1,7 +1,5 @@
 # DAHOW - H-GENAI 2025
 
-Welcome to the **DAHOW** project repository, presented during the **H-GENAI** **2025** **Hackathon**.
-
 ## Presentation Overview
 
 You can view the full PDF presentation [here](https://github.com/Claken/DAHOW/blob/main/DAHOW.pdf).
