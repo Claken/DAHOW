@@ -10,8 +10,9 @@ You can view the full PDF presentation [here](https://github.com/Claken/DAHOW/bl
 
 ## Description
 
-Projet Veolia - Optimisation de la Qualité des Données avec IA
-Ce projet vise à automatiser le contrôle de la qualité des données au sein de l’entrepôt de données de Veolia Eau France en exploitant des méthodes d’IA générative. L'objectif est de faciliter le travail des Data Engineers et Data Scientists en réduisant le temps consacré à la validation des données à grande échelle.
+**Projet Veolia - Optimisation de la Qualité des Données avec IA.** </br>
+Ce projet vise à automatiser le contrôle de la qualité des données au sein de l’entrepôt de données de Veolia Eau France en exploitant des méthodes d’IA générative. </br>
+L'objectif est de faciliter le travail des Data Engineers et Data Scientists en réduisant le temps consacré à la validation des données à grande échelle.
 
 La solution comprend :  
 ✅ Une description du contexte métier et des métadonnées des données traitées.  
